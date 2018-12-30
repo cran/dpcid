@@ -1,0 +1,8 @@
+importFrom("stats","var")
+export(lshr.cov)
+export(dpcid_core)
+export(dpcid_l1_core)
+export(dpcid)
+export(cv.lambda1)
+export(crit.dpcid)
+useDynLib(dpcid, .registration = TRUE)

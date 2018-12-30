@@ -1,0 +1,12 @@
+298e0463f266e25b4c5b9f0959f52462 *DESCRIPTION
+86479f1121a05aeaa6b60084644c695e *NAMESPACE
+5580f5633cf4318d869b5dab1ef24543 *R/dpcid.r
+430f1dce6a6262c64047918d31bb0933 *man/crit.dpcid.Rd
+5df4e16d86a96fb0b64a5046f9b9f837 *man/cv.lambda1.Rd
+155f029bad2142aa2718a9f40a0bee0f *man/dpcid.Rd
+e129a1d9e1e1e85ecbc1e6bd287cb881 *man/dpcid_core.Rd
+e27b18214e59b272a47e310e53599f8b *man/dpcid_l1_core.Rd
+ca4d9b1278f56abf4efdd74783c7b990 *man/lshr.cov.Rd
+8290d2e9740414e315237f0d5d4024bb *src/Makevars
+ee5c683e4b1f0854b9da095c4da29f8c *src/dpcid_c.c
+496a6d305179d7723bd5f72953bf5aec *src/dpcid_init.c
