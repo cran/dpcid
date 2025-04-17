@@ -1,8 +1,22 @@
 
-#include<R.h>
+#define USE_FC_LEN_T
+
+#include <R.h>
+#include <Rinternals.h>
+#include <Rdefines.h>
+
 #include<Rmath.h>
 #include<R_ext/BLAS.h>
+#include<R_ext/Lapack.h>
 #include<memory.h>
+
+
+#ifndef FCONE
+# define FCONE
+#endif
+
+
+
 
 #define max(A,B) (((A)>(B))?(A):(B))
 
@@ -39,8 +53,9 @@ double *rho1, double *rho2, double *resid1, double *resid2)
 	int i,j,k;
 	
 	char NoTrans = 'N';
-    double One = 1.0, MinusOne = -1.0;
-    int IntOne = 1;
+  double One = 1.0, MinusOne = -1.0;
+  int IntOne = 1;
+  
 
 	rho1_old = (double *) malloc(p*p*sizeof(double));
 	rho2_old = (double *) malloc(p*p*sizeof(double));
@@ -66,8 +81,8 @@ double *rho1, double *rho2, double *resid1, double *resid2)
 	
 	for(i=0;i<p;i++)
 	{               
-		x1_pii[i] = F77_NAME(ddot)(&n1,&X1[n1*i],&IntOne, &X1[n1*i],&IntOne);
-    	x2_pii[i] = F77_NAME(ddot)(&n2,&X2[n2*i],&IntOne, &X2[n2*i],&IntOne);
+		x1_pii[i] = F77_CALL(ddot)(&n1,&X1[n1*i],&IntOne, &X1[n1*i],&IntOne);
+    	x2_pii[i] = F77_CALL(ddot)(&n2,&X2[n2*i],&IntOne, &X2[n2*i],&IntOne);
 	}
 
 	
@@ -82,12 +97,12 @@ double *rho1, double *rho2, double *resid1, double *resid2)
 		for(j=0;j<p;j++)
 			temp_coef[j] = sqrt(wd1[j]/wd1[i])*rho1_old[i+p*j];
 		temp_coef[i] = 0;
-        F77_NAME(dgemv)(&NoTrans, &n1, &p, &MinusOne, X1, &n1, temp_coef, &IntOne, &One, &resid1[n1*i], &IntOne);
+        F77_CALL(dgemv)(&NoTrans, &n1, &p, &MinusOne, X1, &n1, temp_coef, &IntOne, &One, &resid1[n1*i], &IntOne FCONE);
 		
 		for(j=0;j<p;j++)
 			temp_coef[j] = sqrt(wd2[j]/wd2[i])*rho2_old[i+p*j];
 		temp_coef[i] = 0;
-		F77_NAME(dgemv)(&NoTrans, &n2, &p, &MinusOne, X2, &n2, temp_coef, &IntOne, &One, &resid2[n2*i], &IntOne);
+		F77_CALL(dgemv)(&NoTrans, &n2, &p, &MinusOne, X2, &n2, temp_coef, &IntOne, &One, &resid2[n2*i], &IntOne FCONE);
 	}
 
     
@@ -106,12 +121,12 @@ double *rho1, double *rho2, double *resid1, double *resid2)
 			{
 					
 			// Y_i^T e_j
-			x1e_pij = sqrt(wd1[i]/wd1[j])*F77_NAME(ddot)(&n1,&X1[n1*i],&IntOne,&resid1[n1*j],&IntOne);
-			x2e_pij = sqrt(wd2[i]/wd2[j])*F77_NAME(ddot)(&n2, &X2[n2*i], &IntOne, &resid2[n2*j], &IntOne);
+			x1e_pij = sqrt(wd1[i]/wd1[j])*F77_CALL(ddot)(&n1,&X1[n1*i],&IntOne,&resid1[n1*j],&IntOne);
+			x2e_pij = sqrt(wd2[i]/wd2[j])*F77_CALL(ddot)(&n2, &X2[n2*i], &IntOne, &resid2[n2*j], &IntOne);
 
 			// Y_j^T e_i
-			x1e_pji = sqrt(wd1[j]/wd1[i])*F77_NAME(ddot)(&n1, &X1[n1*j], &IntOne, &resid1[n1*i], &IntOne);
-			x2e_pji = sqrt(wd1[j]/wd1[i])*F77_NAME(ddot)(&n2, &X2[n2*j], &IntOne, &resid2[n2*i], &IntOne);
+			x1e_pji = sqrt(wd1[j]/wd1[i])*F77_CALL(ddot)(&n1, &X1[n1*j], &IntOne, &resid1[n1*i], &IntOne);
+			x2e_pji = sqrt(wd1[j]/wd1[i])*F77_CALL(ddot)(&n2, &X2[n2*j], &IntOne, &resid2[n2*i], &IntOne);
 
   			Xe1 = (x1e_pji + x1e_pij);
 			XX1 = x1_pii[j]*(wd1[j]/wd1[i]) + x1_pii[i]*(wd1[i]/wd1[j]);
@@ -164,17 +179,17 @@ double *rho1, double *rho2, double *resid1, double *resid2)
 
 			// X_i <- X_j
 			temp = sqrt(wd1[j]/wd1[i])*(rho1_old[i+p*j]-rho1[i+p*j]);
-			F77_NAME(daxpy)(&n1, &temp, &X1[n1*j],&IntOne, &resid1[n1*i],&IntOne);
+			F77_CALL(daxpy)(&n1, &temp, &X1[n1*j],&IntOne, &resid1[n1*i],&IntOne);
 				   
 			temp = sqrt(wd2[j]/wd1[i])*(rho2_old[i+p*j]-rho2[i+p*j]);
-			F77_NAME(daxpy)(&n2, &temp, &X2[n2*j], &IntOne,&resid2[n2*i],&IntOne);
+			F77_CALL(daxpy)(&n2, &temp, &X2[n2*j], &IntOne,&resid2[n2*i],&IntOne);
 
 			// X_j <- X_i
 			temp = sqrt(wd1[i]/wd1[j])*(rho1_old[i+p*j]-rho1[i+p*j]);
-			F77_NAME(daxpy)(&n1, &temp, &X1[n1*i], &IntOne,&resid1[n1*j],&IntOne);
+			F77_CALL(daxpy)(&n1, &temp, &X1[n1*i], &IntOne,&resid1[n1*j],&IntOne);
 				   
 			temp = sqrt(wd2[i]/wd2[j])*(rho2_old[i+p*j]-rho2[i+p*j]);
-			F77_NAME(daxpy)(&n2, &temp, &X2[n2*i], &IntOne,&resid2[n2*j],&IntOne);
+			F77_CALL(daxpy)(&n2, &temp, &X2[n2*i], &IntOne,&resid2[n2*j],&IntOne);
 	   
 			}
 		}
@@ -224,6 +239,7 @@ void dpcid_c(int *N1, int *N2, int *Dim,
 	char NoTrans = 'N';
 	double One = 1.0, MinusOne = -1.0;
 	int IntOne = 1;
+	
 
 	rho1_old = (double *)malloc(p*p*sizeof(double));
 	rho2_old = (double *)malloc(p*p*sizeof(double));
@@ -249,8 +265,8 @@ void dpcid_c(int *N1, int *N2, int *Dim,
 
 	for(i=0;i<p;i++)
 	{
-		x1_pii[i] = F77_NAME(ddot)(&n1, &X1[n1*i], &IntOne, &X1[n1*i], &IntOne);
-		x2_pii[i] = F77_NAME(ddot)(&n2, &X2[n2*i], &IntOne, &X2[n2*i], &IntOne);
+		x1_pii[i] = F77_CALL(ddot)(&n1, &X1[n1*i], &IntOne, &X1[n1*i], &IntOne);
+		x2_pii[i] = F77_CALL(ddot)(&n2, &X2[n2*i], &IntOne, &X2[n2*i], &IntOne);
 	}
 
 
@@ -265,12 +281,12 @@ void dpcid_c(int *N1, int *N2, int *Dim,
 		for(j=0;j<p;j++)
 			temp_coef[j] = sqrt(wd1[j]/wd1[i])*rho1_old[i+p*j];
 		temp_coef[i] = 0;
-		F77_NAME(dgemv)(&NoTrans, &n1, &p, &MinusOne, X1, &n1, temp_coef, &IntOne, &One, &resid1[n1*i], &IntOne);
+		F77_CALL(dgemv)(&NoTrans, &n1, &p, &MinusOne, X1, &n1, temp_coef, &IntOne, &One, &resid1[n1*i], &IntOne FCONE);
 
 		for(j=0;j<p;j++)
 			temp_coef[j] = sqrt(wd2[j]/wd2[i])*rho2_old[i+p*j];
 		temp_coef[i] = 0;
-		F77_NAME(dgemv)(&NoTrans, &n2, &p, &MinusOne, X2, &n2, temp_coef, &IntOne, &One, &resid2[n2*i], &IntOne);
+		F77_CALL(dgemv)(&NoTrans, &n2, &p, &MinusOne, X2, &n2, temp_coef, &IntOne, &One, &resid2[n2*i], &IntOne FCONE);
 	}
 
 
@@ -289,12 +305,12 @@ void dpcid_c(int *N1, int *N2, int *Dim,
 			{
 
 				// Y_i^T e_j
-				x1e_pij = sqrt(wd1[i]/wd1[j])*F77_NAME(ddot)(&n1, &X1[n1*i], &IntOne, &resid1[n1*j], &IntOne);
-				x2e_pij = sqrt(wd2[i]/wd2[j])*F77_NAME(ddot)(&n2, &X2[n2*i], &IntOne, &resid2[n2*j], &IntOne);
+				x1e_pij = sqrt(wd1[i]/wd1[j])*F77_CALL(ddot)(&n1, &X1[n1*i], &IntOne, &resid1[n1*j], &IntOne);
+				x2e_pij = sqrt(wd2[i]/wd2[j])*F77_CALL(ddot)(&n2, &X2[n2*i], &IntOne, &resid2[n2*j], &IntOne);
 
 				// Y_j^T e_i
-				x1e_pji = sqrt(wd1[j]/wd1[i])*F77_NAME(ddot)(&n1, &X1[n1*j], &IntOne, &resid1[n1*i], &IntOne);
-				x2e_pji = sqrt(wd1[j]/wd1[i])*F77_NAME(ddot)(&n2, &X2[n2*j], &IntOne, &resid2[n2*i], &IntOne);
+				x1e_pji = sqrt(wd1[j]/wd1[i])*F77_CALL(ddot)(&n1, &X1[n1*j], &IntOne, &resid1[n1*i], &IntOne);
+				x2e_pji = sqrt(wd1[j]/wd1[i])*F77_CALL(ddot)(&n2, &X2[n2*j], &IntOne, &resid2[n2*i], &IntOne);
 
 				Xe1 = (x1e_pji + x1e_pij);
 				XX1 = x1_pii[j]*(wd1[j]/wd1[i]) + x1_pii[i]*(wd1[i]/wd1[j]);
@@ -349,17 +365,17 @@ void dpcid_c(int *N1, int *N2, int *Dim,
 
 				// X_i <- X_j
 				temp = sqrt(wd1[j]/wd1[i])*(rho1_old[i+p*j]-rho1[i+p*j]);
-				F77_NAME(daxpy)(&n1, &temp, &X1[n1*j], &IntOne, &resid1[n1*i], &IntOne);
+				F77_CALL(daxpy)(&n1, &temp, &X1[n1*j], &IntOne, &resid1[n1*i], &IntOne);
 
 				temp = sqrt(wd2[j]/wd1[i])*(rho2_old[i+p*j]-rho2[i+p*j]);
-				F77_NAME(daxpy)(&n2, &temp, &X2[n2*j], &IntOne, &resid2[n2*i], &IntOne);
+				F77_CALL(daxpy)(&n2, &temp, &X2[n2*j], &IntOne, &resid2[n2*i], &IntOne);
 
 				// X_j <- X_i
 				temp = sqrt(wd1[i]/wd1[j])*(rho1_old[i+p*j]-rho1[i+p*j]);
-				F77_NAME(daxpy)(&n1, &temp, &X1[n1*i], &IntOne, &resid1[n1*j], &IntOne);
+				F77_CALL(daxpy)(&n1, &temp, &X1[n1*i], &IntOne, &resid1[n1*j], &IntOne);
 
 				temp = sqrt(wd2[i]/wd2[j])*(rho2_old[i+p*j]-rho2[i+p*j]);
-				F77_NAME(daxpy)(&n2, &temp, &X2[n2*i], &IntOne, &resid2[n2*j], &IntOne);
+				F77_CALL(daxpy)(&n2, &temp, &X2[n2*i], &IntOne, &resid2[n2*j], &IntOne);
 
 			}
 		}
